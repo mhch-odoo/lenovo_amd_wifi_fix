@@ -8,13 +8,25 @@ then
     action=$1
 fi
 
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    if [ "$ID" != "ubuntu" ]; then
+        echo "This script is intended to run only on Ubuntu systems!"
+        exit 1
+    fi
+else
+    echo "Cannot determine the operating system. Exiting..."
+    exit 1
+fi
+
 case "$action" in
     install|i)
         echo "installing IWD ..."
-        sudo apt update
-        sudo apt upgrade -y
+
+        sudo apt update || echo "WARNING: apt update had errors (e.g. a broken repo). Continuing anyway..."
+        sudo apt upgrade -y || echo "WARNING: apt upgrade had errors. Continuing anyway..."
         sudo apt autoremove -y
-        sudo apt install iwd -y
+        sudo apt install iwd -y || { echo "ERROR: iwd installation failed. Aborting to preserve internet access."; exit 1; }
 
         if ! grep -q "wifi.backend=iwd" $netWorkManagerConf
         then
